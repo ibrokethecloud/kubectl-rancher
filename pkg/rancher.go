@@ -27,9 +27,9 @@ type ClusterList struct {
 }
 
 type ClusterListSpec struct {
-	Clusters v3.ClusterSpec    `json:"appliedSpec"`
-	ID       string            `json:"id"`
-	Actions  map[string]string `json:"actions"`
+	Name    string            `json:"name"`
+	ID      string            `json:"id"`
+	Actions map[string]string `json:"actions"`
 }
 
 // NewRancherAPI will use the input flags or env variables to init
@@ -58,7 +58,7 @@ func (r *RancherAPI) ListClusters() (clusters map[string]string, err error) {
 		if cn.ID == "local" {
 			clusters["local"] = "local"
 		} else {
-			clusters[cn.Clusters.DisplayName] = cn.ID
+			clusters[cn.Name] = cn.ID
 		}
 
 	}
@@ -92,6 +92,10 @@ func (r *RancherAPI) FetchKubeconfig(clusterID string,
 
 	if _, err = os.Stat(dir + "/.kube"); os.IsNotExist(err) {
 		err = os.Mkdir(dir+"/.kube", 0755)
+	}
+
+	if err != nil {
+		return "", err
 	}
 
 	kubeConfigFile := dir + "/.kube/" + clusterName + ".yaml"
