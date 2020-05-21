@@ -10,4 +10,5 @@ require (
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.3
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 )
