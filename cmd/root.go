@@ -24,6 +24,7 @@ func init() {
 	flags := rootCmd.PersistentFlags()
 	flags.String("url", "", "Rancher server url to connect to, or specify as env variable RANCHER_URL. Should be of the form http/https..")
 	flags.String("token", "", "Rancher server api token to use, or specify as env variable RANCHER_TOKEN")
+	flags.String("ca", "", "Rancher server ca cert location, or specify as env variable RANCHER_CA")
 	flags.Bool("insecure", false, "Ignore tls check when connecting to rancher server")
 	viper.BindPFlag("url", flags.Lookup("url"))
 	viper.BindPFlag("token", flags.Lookup("token"))
@@ -63,7 +64,8 @@ switch between clusters and manipulate objects on them`,
 		Run: func(cmd *cobra.Command, args []string) {
 			r := rancher.NewRancherAPI(viper.GetString("url"),
 				viper.GetBool("insecure"),
-				viper.GetString("token"))
+				viper.GetString("token"),
+				viper.GetString("ca"))
 
 			clusters, err := r.ListClusters()
 			if err != nil {
@@ -93,7 +95,8 @@ env variable to point to new file.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			r := rancher.NewRancherAPI(viper.GetString("url"),
 				viper.GetBool("insecure"),
-				viper.GetString("token"))
+				viper.GetString("token"),
+				viper.GetString("ca"))
 
 			clusters, err := r.ListClusters()
 			if err != nil {
@@ -119,7 +122,8 @@ env variable to point to new file.`,
 				viper.GetString("user"),
 				viper.GetString("password"),
 				viper.GetString("login-method"),
-				viper.GetBool("insecure"))
+				viper.GetBool("insecure"),
+				viper.GetString("ca"))
 
 			if err != nil {
 				logrus.Error(err)
