@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"golang.org/x/crypto/ssh/terminal"
 
@@ -24,6 +27,7 @@ type RancherAPI struct {
 	Endpoint string
 	Insecure bool
 	Token    string
+	CACert   string
 }
 
 // ClusterList is the parent struct for parsing response from v3.Clusters
@@ -39,10 +43,11 @@ type ClusterListSpec struct {
 
 // NewRancherAPI will use the input flags or env variables to init
 // the RancherAPI struct for use for interacting with the rancher server
-func NewRancherAPI(url string, insecure bool, token string) (r *RancherAPI) {
+func NewRancherAPI(url string, insecure bool, token string, cacert string) (r *RancherAPI) {
 	r = &RancherAPI{Endpoint: url,
 		Insecure: insecure,
 		Token:    token,
+		CACert:   cacert,
 	}
 	return r
 }
@@ -125,26 +130,50 @@ func (r *RancherAPI) makeCall(uri string, method string,
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 	var client *http.Client
-	if r.Insecure {
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		client = &http.Client{Transport: tr}
-	} else {
-		client = &http.Client{}
-	}
-
+	tr := r.setupTransport()
+	client = &http.Client{Transport: tr}
 	resp, err := client.Do(req)
-	if resp.StatusCode > 400 || err != nil {
-		return []byte{}, fmt.Errorf("Error during api call: %v, Resp Code: %v \n", err, resp.StatusCode)
-	}
+
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("Error during api call: %v \n", err)
+	}
+	if resp.StatusCode > 400 {
+		return []byte{}, fmt.Errorf("Error during api call: %v, Resp Code: %v \n", err, resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
 	data, err = ioutil.ReadAll(resp.Body)
 	return data, err
+}
+
+func (r *RancherAPI) setupTransport() *http.Transport {
+	tlsConfig := &tls.Config{}
+
+	if r.Insecure {
+		tlsConfig.InsecureSkipVerify = true
+	}
+	if len(r.CACert) > 0 {
+		rootCA := loadCA(r.CACert)
+		tlsConfig.RootCAs = rootCA
+	}
+
+	return &http.Transport{TLSClientConfig: tlsConfig}
+}
+
+func loadCA(caFile string) (rootCA *x509.CertPool) {
+	rootCA, _ = x509.SystemCertPool()
+
+	caCertByte, err := ioutil.ReadFile(caFile)
+	if err != nil {
+		logrus.Error("Unable to read specified CA cert file. No custom CA's will be added")
+		return rootCA
+	}
+
+	if ok := rootCA.AppendCertsFromPEM(caCertByte); !ok {
+		logrus.Error("Error appending CA cert file. No custom CA's will be added")
+	}
+
+	return rootCA
 }
 
 func splitToken(token string) (username string, password string, err error) {
@@ -158,7 +187,7 @@ func splitToken(token string) (username string, password string, err error) {
 }
 
 // NewRancherLogin performs the login using api call
-func NewRancherLogin(url string, username string, password string, method string, insecure bool) (token string, err error) {
+func NewRancherLogin(url string, username string, password string, method string, insecure bool, cacert string) (token string, err error) {
 
 	username, err = checkAndPrompt(username, "RANCHER_USER", false)
 	if err != nil {
@@ -179,6 +208,7 @@ func NewRancherLogin(url string, username string, password string, method string
 		Endpoint: url,
 		Insecure: insecure,
 		Token:    "",
+		CACert:   cacert,
 	}
 
 	reqMap := make(map[string]string)
