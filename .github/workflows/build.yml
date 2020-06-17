@@ -1,4 +1,4 @@
-name: Go
+name: Test and Build
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Build
-      run: go build -v .
-
     - name: Test
       run: go test -v .
+
+    - name: Build
+      run: go build -v .

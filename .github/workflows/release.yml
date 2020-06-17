@@ -1,0 +1,93 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: Create Release
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.13
+        id: go
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Darwin build 
+        run: |
+          go build -o kubectl-rancher .
+          zip --junk-paths kubectl-rancher-${GOOS}-${{ steps.get_version.outputs.version }}.zip kubectl-rancher
+          ls -lart
+        env:
+          GOOS: "darwin"
+
+      - name: Linux build
+        run: |
+          go build -o kubectl-rancher .
+          zip --junk-paths kubectl-rancher-${GOOS}-${{ steps.get_version.outputs.version }}.zip kubectl-rancher
+          ls -lart
+        env:
+          GOOS: "linux"
+          
+      - name: Windows build 
+        run: |
+          go build -o kubectl-rancher .
+          zip --junk-paths kubectl-rancher-${GOOS}-${{ steps.get_version.outputs.version }}.zip kubectl-rancher
+          ls -lart
+        env:
+          GOOS: "windows"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: false
+
+      - name: Upload Darwin Asset
+        id: upload-darwin-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./kubectl-rancher-darwin-${{ steps.get_version.outputs.version }}.zip
+          asset_name: kubectl-rancher-darwin-${{ steps.get_version.outputs.version }}.zip
+          asset_content_type: application/zip
+
+      - name: Upload Linux Asset
+        id: upload-linux-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./kubectl-rancher-linux-${{ steps.get_version.outputs.version }}.zip
+          asset_name: kubectl-rancher-linux-${{ steps.get_version.outputs.version }}.zip
+          asset_content_type: application/zip          
+
+      - name: Upload Windows Asset
+        id: upload-windows-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOOS: "windows"
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./kubectl-rancher-windows-${{ steps.get_version.outputs.version }}.zip
+          asset_name: kubectl-rancher-windows-${{ steps.get_version.outputs.version }}.zip
+          asset_content_type: application/zip             
