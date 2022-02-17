@@ -19,7 +19,6 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 
 	homedir "github.com/mitchellh/go-homedir"
-	v3 "github.com/rancher/types/apis/management.cattle.io/v3"
 )
 
 // RancherAPI is the parent struct for interacting with the Rancher API endpoint
@@ -87,7 +86,7 @@ func (r *RancherAPI) FetchKubeconfig(clusterID string,
 	if len(data) == 0 {
 		return "", errors.New("Kubeconfig file looks empty")
 	}
-	kubeConfig := v3.GenerateKubeConfigOutput{}
+	kubeConfig := make(map[string]string)
 
 	if err := json.Unmarshal(data, &kubeConfig); err != nil {
 		return "", err
@@ -110,7 +109,7 @@ func (r *RancherAPI) FetchKubeconfig(clusterID string,
 
 	kubeConfigFile := dir + "/.kube/" + clusterName + ".yaml"
 	err = ioutil.WriteFile(kubeConfigFile,
-		[]byte(kubeConfig.Config), 0644)
+		[]byte(kubeConfig["config"]), 0644)
 
 	return kubeConfigFile, err
 
