@@ -35,6 +35,8 @@ func init() {
 	loginCommand.Flags().String("user", "", "User name to use to login to Rancher api, or specify as env variable RANCHER_USER")
 	loginCommand.Flags().String("password", "", "Password name to use to login to Rancher api, or specify as env variable RANCHER_PASSWORD")
 	loginCommand.Flags().String("login-method", "", "Method to use to login to Rancher api, or specify as env variable RANCHER_LOGIN_METHOD")
+	configCommand.Flags().Bool("quiet", false, "suppress messages, makes it easy to use in a script")
+	viper.BindPFlag("quiet", configCommand.Flags().Lookup("quiet"))
 	viper.BindPFlag("user", loginCommand.Flags().Lookup("user"))
 	viper.BindPFlag("password", loginCommand.Flags().Lookup("password"))
 	viper.BindPFlag("login-method", loginCommand.Flags().Lookup("login-method"))
@@ -108,7 +110,13 @@ env variable to point to new file.`,
 				return errors.New("Invalid cluster name specified: " + args[0])
 			}
 			kubeConfigFile, err := r.FetchKubeconfig(clusterID, args[0])
-			fmt.Printf("Cluster config stored in %s \n", kubeConfigFile)
+			quiet := viper.GetBool("quiet")
+			if !quiet {
+				fmt.Printf("Cluster config stored in %s \n", kubeConfigFile)
+			} else {
+				fmt.Println(kubeConfigFile)
+			}
+
 			return err
 		},
 	}
