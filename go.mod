@@ -7,7 +7,7 @@ require (
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.3
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
+	golang.org/x/crypto v0.1.0
 )
 
 require (
@@ -26,8 +26,9 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/term v0.1.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
